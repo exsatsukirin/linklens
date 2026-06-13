@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"lnkgen/internal/lnk"
+	"github.com/exsatsukirin/linklens/internal/lnk"
 )
 
 var (
@@ -49,7 +49,7 @@ Works on Windows, Linux, and macOS.`,
 }
 
 var rootCmd = &cobra.Command{
-	Use:   "lnkgen",
+	Use:   "linklens",
 	Short: "Windows shortcut (.lnk) generator",
 }
 
