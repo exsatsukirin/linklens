@@ -124,49 +124,33 @@ func TestLnkFile_NonASCII(t *testing.T) {
 		t.Error("IsUnicode flag not set")
 	}
 
-	// Verify Chinese characters in StringData section (after header + IDList + LinkInfo)
-	// Check for the Chinese working dir in UTF-16LE
-	// '用户' — contiguous in UTF-16LE stream
+	// Verify Chinese characters appear in the output
+	// '用户' and '文档' appear in StringData WorkingDir (UTF-16LE)
 	chineseUser := []byte{
-		// '用' U+7528
-		0x28, 0x75,
-		// '户' U+6237
-		0x37, 0x62,
+		0x28, 0x75, // '用' U+7528
+		0x37, 0x62, // '户' U+6237
 	}
 	if !bytes.Contains(data, chineseUser) {
-		t.Error("Output should contain Chinese chars '用户' in UTF-16LE")
+		t.Error("Output should contain Chinese chars '用户' in UTF-16LE (StringData)")
 	}
-	// '文档' — contiguous in UTF-16LE stream
 	chineseDoc := []byte{
-		// '文' U+6587
-		0x87, 0x65,
-		// '档' U+6863
-		0x63, 0x68,
+		0x87, 0x65, // '文' U+6587
+		0x63, 0x68, // '档' U+6863
 	}
 	if !bytes.Contains(data, chineseDoc) {
-		t.Error("Output should contain Chinese chars '文档' in UTF-16LE")
+		t.Error("Output should contain Chinese chars '文档' in UTF-16LE (StringData)")
 	}
-	// '报告' — from the target path
-	chineseReport := []byte{
-		// '报' U+62A5
-		0xA5, 0x62,
-		// '告' U+544A
-		0x4A, 0x54,
-	}
-	if !bytes.Contains(data, chineseReport) {
-		t.Error("Output should contain Chinese chars '报告' in UTF-16LE")
+	// '报告' appears in IDList and LinkInfo as raw bytes (ANSI/UTF-8)
+	if !bytes.Contains(data, []byte("报告")) {
+		t.Error("Output should contain Chinese chars '报告' in ANSI encoding")
 	}
 
-	// Check for Chinese args
+	// Chinese args appear in StringData Arguments (UTF-16LE)
 	chineseArgs := []byte{
-		// '你' U+4F60
-		0x60, 0x4F,
-		// '好' U+597D
-		0x7D, 0x59,
-		// '世' U+4E16
-		0x16, 0x4E,
-		// '界' U+754C
-		0x4C, 0x75,
+		0x60, 0x4F, // '你' U+4F60
+		0x7D, 0x59, // '好' U+597D
+		0x16, 0x4E, // '世' U+4E16
+		0x4C, 0x75, // '界' U+754C
 	}
 	if !bytes.Contains(data, chineseArgs) {
 		t.Error("Output should contain Chinese args '你好世界' in UTF-16LE")

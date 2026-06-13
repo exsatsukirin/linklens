@@ -34,10 +34,9 @@ func TestLinkInfo_MarshalBinary(t *testing.T) {
 		t.Errorf("LinkInfoHeaderSize: got %d, want 28", linkInfoHeaderSize)
 	}
 
-	// Check the local base path appears in UTF-16LE encoding
-	utf16Exe := []byte{'a', 0, 'p', 0, 'p', 0, '.', 0, 'e', 0, 'x', 0, 'e', 0}
-	if !bytes.Contains(got, utf16Exe) {
-		t.Errorf("LinkInfo should contain UTF-16LE encoded 'app.exe'")
+	// Check the local base path appears in ANSI encoding
+	if !bytes.Contains(got, []byte("app.exe")) {
+		t.Errorf("LinkInfo should contain ANSI encoded 'app.exe'")
 	}
 }
 

@@ -14,6 +14,7 @@ type ShellLinkHeader struct {
 	CreationTime   time.Time
 	AccessTime     time.Time
 	WriteTime      time.Time
+	FileSize       uint32
 	IconIndex      uint32
 	ShowCommand    uint32
 	HotKey         uint16
@@ -59,8 +60,8 @@ func (h ShellLinkHeader) MarshalBinary() ([]byte, error) {
 	binary.LittleEndian.PutUint64(buf[36:44], timeToFileTime(h.AccessTime))
 	// WriteTime (8 bytes)
 	binary.LittleEndian.PutUint64(buf[44:52], timeToFileTime(h.WriteTime))
-	// FileSize (4 bytes) - not used, set to 0
-	// (buf[52:56] already 0)
+	// FileSize (4 bytes)
+	binary.LittleEndian.PutUint32(buf[52:56], h.FileSize)
 	// IconIndex (4 bytes)
 	binary.LittleEndian.PutUint32(buf[56:60], h.IconIndex)
 	// ShowCommand (4 bytes)
