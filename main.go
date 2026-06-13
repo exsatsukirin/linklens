@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"lnkgen/internal/lnk"
 )
 
 var (
@@ -23,7 +24,26 @@ Works on Windows, Linux, and macOS.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, positional []string) error {
 		output := positional[0]
-		fmt.Printf("Creating shortcut: %s -> %s\n", output, target)
+
+		shortcut := &lnk.LnkFile{
+			Target:  target,
+			WorkDir: workdir,
+			Args:    args,
+			Icon:    icon,
+		}
+
+		f, err := os.Create(output)
+		if err != nil {
+			return fmt.Errorf("failed to create output file: %w", err)
+		}
+		defer f.Close()
+
+		n, err := shortcut.WriteTo(f)
+		if err != nil {
+			return fmt.Errorf("failed to write shortcut: %w", err)
+		}
+
+		fmt.Printf("Created shortcut: %s (%d bytes)\n", output, n)
 		return nil
 	},
 }
