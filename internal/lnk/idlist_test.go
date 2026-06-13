@@ -1,6 +1,7 @@
 package lnk
 
 import (
+	"bytes"
 	"encoding/binary"
 	"testing"
 )
@@ -62,6 +63,46 @@ func TestBuildIDList_Empty(t *testing.T) {
 	_, err := BuildIDList("")
 	if err == nil {
 		t.Error("expected error for empty target")
+	}
+}
+
+func TestBuildIDList_NonASCII(t *testing.T) {
+	// Chinese file name in path
+	got, err := BuildIDList(`C:\用户\文档\报告.docx`)
+	if err != nil {
+		t.Fatalf("BuildIDList() error = %v", err)
+	}
+	if len(got) < 10 {
+		t.Fatalf("output too short: %d bytes", len(got))
+	}
+
+	// Verify size field
+	size := int(binary.LittleEndian.Uint16(got[0:2]))
+	if size != len(got)-2 {
+		t.Errorf("declared size %d != actual data size %d", size, len(got)-2)
+	}
+
+	// Verify terminal ID
+	terminal := binary.LittleEndian.Uint16(got[len(got)-2:])
+	if terminal != 0 {
+		t.Errorf("expected terminal 0x0000, got 0x%04x", terminal)
+	}
+
+	// The ITEMIDLIST entries should contain the Chinese characters as UTF-16LE
+	// We can't easily parse the structure without a full ITEMIDLIST parser,
+	// but we can verify the raw UTF-16LE encoding of the file name appears
+	chineseBytes := []byte{
+		// '报' in UTF-16LE = U+62A5
+		0xA5, 0x62,
+		// '告' in UTF-16LE = U+544A
+		0x4A, 0x54,
+		// '.'
+		0x2E, 0x00,
+		// 'd'
+		0x64, 0x00,
+	}
+	if !bytes.Contains(got, chineseBytes) {
+		t.Errorf("IDList should contain Chinese filename '报告.docx' in UTF-16LE")
 	}
 }
 
