@@ -33,10 +33,13 @@ func (li LinkInfo) MarshalBinary() ([]byte, error) {
 	// ANSI local base path (null-terminated byte string)
 	ansiLocalBasePath := []byte(target + "\x00")
 
-	// Build VolumeID (22 bytes: 21 declared + "Data\0" label, matching system .lnk)
+	// VolumeID (21 bytes: 16 bytes of fixed fields + "Data\0" ANSI label).
+	// Per MS-SHLLINK 2.3.1 each field before the label is a 4-byte unsigned
+	// integer, so DriveType must occupy a full uint32. Encoding it as 2 bytes
+	// shifts the serial number and label offset and corrupts the block.
 	volumeIDData := []byte{
 		0x15, 0x00, 0x00, 0x00, // VolumeIDSize = 21
-		0x03, 0x00, // DriveType = DRIVE_FIXED
+		0x03, 0x00, 0x00, 0x00, // DriveType = DRIVE_FIXED
 		0x00, 0x00, 0x00, 0x00, // VolumeSerialNumber = 0 (unknown)
 		0x10, 0x00, 0x00, 0x00, // VolumeLabelOffset = 16
 		0x44, 0x61, 0x74, 0x61, 0x00, // VolumeLabel = "Data" + null
@@ -89,4 +92,3 @@ func (li LinkInfo) WriteTo(w io.Writer) (int64, error) {
 	n, err := w.Write(data)
 	return int64(n), err
 }
-

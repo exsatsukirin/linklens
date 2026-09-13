@@ -8,17 +8,21 @@ import (
 )
 
 // StringData holds the optional string fields of a .lnk file.
-// Strings are written in order: Name, RelativePath, WorkingDir, Arguments, IconLocation.
+// Strings are written in the order defined by MS-SHLLINK 2.4:
+// Name, RelativePath, WorkingDir, Arguments, IconLocation.
 // Each string is prefixed with a uint16 character count (including null terminator),
 // then the UTF-16LE encoded string with a 2-byte null terminator (\x00\x00).
-// If a string is absent, only its uint16 count=0 is written.
+//
+// A field MUST be present if and only if its corresponding LinkFlags bit is set,
+// so absent fields are omitted entirely rather than written as a zero count.
+// Writing placeholders for absent fields would shift every following field.
 type StringData struct {
-	HasWorkingDir    bool
-	WorkingDir       string
-	HasArguments     bool
-	Arguments        string
-	HasIconLocation  bool
-	IconLocation     string
+	HasWorkingDir   bool
+	WorkingDir      string
+	HasArguments    bool
+	Arguments       string
+	HasIconLocation bool
+	IconLocation    string
 }
 
 // encodeUTF16Le encodes a Go string to UTF-16LE bytes with null terminator.
@@ -37,19 +41,15 @@ func encodeUTF16Le(s string) (count uint16, data []byte) {
 func (sd StringData) MarshalBinary() ([]byte, error) {
 	var buf bytes.Buffer
 
-	// Name (always written as count=0 since we don't support it)
-	binary.Write(&buf, binary.LittleEndian, uint16(0))
-
-	// RelativePath (always written as count=0 since we don't support it)
-	binary.Write(&buf, binary.LittleEndian, uint16(0))
+	// Fields are emitted in MS-SHLLINK order and only when their LinkFlags bit
+	// is set. Name and RelativePath are not supported and are therefore omitted
+	// entirely (never written as zero-count placeholders).
 
 	// WorkingDir
 	if sd.HasWorkingDir && sd.WorkingDir != "" {
 		count, data := encodeUTF16Le(sd.WorkingDir)
 		binary.Write(&buf, binary.LittleEndian, count)
 		buf.Write(data)
-	} else {
-		binary.Write(&buf, binary.LittleEndian, uint16(0))
 	}
 
 	// Arguments
@@ -57,8 +57,6 @@ func (sd StringData) MarshalBinary() ([]byte, error) {
 		count, data := encodeUTF16Le(sd.Arguments)
 		binary.Write(&buf, binary.LittleEndian, count)
 		buf.Write(data)
-	} else {
-		binary.Write(&buf, binary.LittleEndian, uint16(0))
 	}
 
 	// IconLocation
@@ -66,8 +64,6 @@ func (sd StringData) MarshalBinary() ([]byte, error) {
 		count, data := encodeUTF16Le(sd.IconLocation)
 		binary.Write(&buf, binary.LittleEndian, count)
 		buf.Write(data)
-	} else {
-		binary.Write(&buf, binary.LittleEndian, uint16(0))
 	}
 
 	return buf.Bytes(), nil

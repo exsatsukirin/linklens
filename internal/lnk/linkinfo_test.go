@@ -62,6 +62,33 @@ func TestLinkInfo_EmptyTarget(t *testing.T) {
 	}
 }
 
+// TestLinkInfo_VolumeID locks in the MS-SHLLINK 2.3.1 VolumeID layout: every
+// field before the label is 4 bytes wide. Encoding DriveType as only 2 bytes
+// used to shift the serial number and label offset and corrupt the block.
+func TestLinkInfo_VolumeID(t *testing.T) {
+	data, err := LinkInfo{Target: `C:\Windows\notepad.exe`}.MarshalBinary()
+	if err != nil {
+		t.Fatalf("MarshalBinary() error = %v", err)
+	}
+	const volOff = 28 // VolumeID starts right after the 28-byte LinkInfo header
+	if v := binary.LittleEndian.Uint32(data[volOff : volOff+4]); v != 21 {
+		t.Errorf("VolumeIDSize = %d, want 21", v)
+	}
+	if v := binary.LittleEndian.Uint32(data[volOff+4 : volOff+8]); v != 3 {
+		t.Errorf("DriveType = %d, want 3 (DRIVE_FIXED)", v)
+	}
+	if v := binary.LittleEndian.Uint32(data[volOff+12 : volOff+16]); v != 16 {
+		t.Errorf("VolumeLabelOffset = %d, want 16", v)
+	}
+	if label := string(data[volOff+16 : volOff+21]); label != "Data\x00" {
+		t.Errorf("VolumeLabel = %q, want %q", label, "Data\x00")
+	}
+	// LocalBasePathOffset must point exactly past the 21-byte VolumeID.
+	if v := binary.LittleEndian.Uint32(data[16:20]); v != uint32(volOff+21) {
+		t.Errorf("LocalBasePathOffset = %d, want %d", v, volOff+21)
+	}
+}
+
 func TestLinkInfo_WriteTo(t *testing.T) {
 	li := LinkInfo{
 		Target: `C:\test\file.txt`,

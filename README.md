@@ -9,7 +9,17 @@ Cross-platform Windows shortcut (.lnk) generator — pure Go, no Windows API req
 - 生成 Windows `.lnk` 快捷方式文件 / Generate Windows `.lnk` shortcut files
 - 纯 Go 实现，无 CGO，无 Windows API 调用 / Pure Go, no CGO, no Windows API
 - 支持 Linux、macOS、Windows 跨平台 / Cross-platform (Linux, macOS, Windows)
-- 支持非 ASCII 字符（中文、emoji 等）的 UTF-16LE 编码 / Non-ASCII character support (Chinese, emoji, etc.)
+- 目标路径、参数、工作目录与图标均已在真实 Windows 上验证 / Target, arguments, working dir and icon verified on real Windows
+
+## 已知限制 / Known Limitations
+
+- **暂不支持非 ASCII 字符**（中文、emoji 等）。`.lnk` 的 LinkInfo 路径字段按 ANSI
+  （系统代码页）编码，跨平台生成时无法可靠写入目标机器所需的代码页；为避免生成
+  Windows 无法解析的快捷方式，CLI 会直接报错拒绝非 ASCII 输入（而不是静默产出坏文件）。
+- **Non-ASCII input is not supported yet** (Chinese, emoji, ...). The `.lnk` LinkInfo
+  path field is ANSI/system-codepage encoded and cannot be written reliably by a
+  cross-platform generator, so non-ASCII input is rejected with an error instead of
+  silently producing a shortcut that Windows cannot resolve.
 
 ## 安装 / Install
 
@@ -49,12 +59,6 @@ linklens create \
   --args "--config config.ini --verbose" \
   --icon "C:\Program Files\MyApp\app.exe,0" \
   myapp.lnk
-
-# 中文路径 / Chinese path
-linklens create \
-  --target "C:\用户\文档\报告.docx" \
-  --workdir "C:\用户\文档" \
-  报告.lnk
 ```
 
 ## 技术实现 / Technical Details

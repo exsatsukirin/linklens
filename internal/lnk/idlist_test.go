@@ -1,7 +1,6 @@
 package lnk
 
 import (
-	"bytes"
 	"encoding/binary"
 	"testing"
 )
@@ -63,34 +62,6 @@ func TestBuildIDList_Empty(t *testing.T) {
 	_, err := BuildIDList("", 0)
 	if err == nil {
 		t.Error("expected error for empty target")
-	}
-}
-
-func TestBuildIDList_NonASCII(t *testing.T) {
-	// Chinese file name in path - stored as raw bytes in short name field
-	got, err := BuildIDList(`C:\用户\文档\报告.docx`, 0)
-	if err != nil {
-		t.Fatalf("BuildIDList() error = %v", err)
-	}
-	if len(got) < 10 {
-		t.Fatalf("output too short: %d bytes", len(got))
-	}
-
-	// Verify size field
-	size := int(binary.LittleEndian.Uint16(got[0:2]))
-	if size != len(got)-2 {
-		t.Errorf("declared size %d != actual data size %d", size, len(got)-2)
-	}
-
-	// Verify terminal ID
-	terminal := binary.LittleEndian.Uint16(got[len(got)-2:])
-	if terminal != 0 {
-		t.Errorf("expected terminal 0x0000, got 0x%04x", terminal)
-	}
-
-	// Verify the filename appears as raw bytes (Go UTF-8 encoding)
-	if !bytes.Contains(got, []byte("报告.docx")) {
-		t.Error("IDList should contain filename '报告.docx'")
 	}
 }
 
